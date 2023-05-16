@@ -8,7 +8,6 @@ $params = array_merge(
 
 return [
     'id' => 'app-backend',
-    'name' => 'FreeCodeTube',
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
     'bootstrap' => ['log'],
@@ -45,6 +44,8 @@ return [
             'showScriptName' => false,
             'rules' => [
                 'video/update/<video_id>' => 'video/update',
+                'video/view/<video_id>' => 'video/view',
+                'video/delete/<video_id>' => 'video/delete',
             ],
         ],
         'assetManager' => [

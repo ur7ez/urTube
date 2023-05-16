@@ -21,15 +21,15 @@ $this->params['breadcrumbs'][] = $this->title;
         <p class="m-0">Drag and drop a file you want to upload</p>
         <p class="text-muted">Your video will be private until you publish it</p>
 
-        <?php ActiveForm::begin([
+        <?php $form = ActiveForm::begin([
             'options' => ['enctype' => 'multipart/form-data'],
         ]); ?>
+        <?= $form->errorSummary($model) ?>
+
         <button class="btn btn-primary btn-file">
             Select file
             <input type="file" id="videoFile" name="video">
         </button>
         <?php ActiveForm::end(); ?>
     </div>
-    <?php /*= $this->render('_form', ['model' => $model,])*/ ?>
-
 </div>

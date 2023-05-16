@@ -4,9 +4,12 @@ namespace backend\controllers;
 
 use common\models\Video;
 use yii\data\ActiveDataProvider;
+use yii\db\StaleObjectException;
+use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\Response;
 use yii\web\UploadedFile;
 
 /**
@@ -22,6 +25,15 @@ class VideoController extends Controller
         return array_merge(
             parent::behaviors(),
             [
+                'access' => [
+                    'class' => AccessControl::class,
+                    'rules' => [
+                        [
+                            'allow' => true,
+                            'roles' => ['@'],
+                        ]
+                    ],
+                ],
                 'verbs' => [
                     'class' => VerbFilter::class,
                     'actions' => [
@@ -40,34 +52,13 @@ class VideoController extends Controller
     public function actionIndex()
     {
         $dataProvider = new ActiveDataProvider([
-            'query' => Video::find(),
-            /*
-            'pagination' => [
-                'pageSize' => 50
-            ],
-            'sort' => [
-                'defaultOrder' => [
-                    'video_id' => SORT_DESC,
-                ]
-            ],
-            */
+            'query' => Video::find()
+                ->creator(\Yii::$app->user->id)
+                ->latest(),
         ]);
 
         return $this->render('index', [
             'dataProvider' => $dataProvider,
-        ]);
-    }
-
-    /**
-     * Displays a single Video model.
-     * @param string $video_id Video ID
-     * @return string
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    public function actionView($video_id)
-    {
-        return $this->render('view', [
-            'model' => $this->findModel($video_id),
         ]);
     }
 
@@ -101,12 +92,13 @@ class VideoController extends Controller
      * @return string|\yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionUpdate($video_id)
+    public function actionUpdate(string $video_id)
     {
         $model = $this->findModel($video_id);
 
+        $model->thumbnail = UploadedFile::getInstanceByName('thumbnail');
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'video_id' => $model->video_id]);
+            return $this->redirect(['update', 'video_id' => $model->video_id]);
         }
 
         return $this->render('update', [
@@ -118,13 +110,13 @@ class VideoController extends Controller
      * Deletes an existing Video model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param string $video_id Video ID
-     * @return \yii\web\Response
+     * @return Response
      * @throws NotFoundHttpException if the model cannot be found
+     * @throws StaleObjectException|\Throwable
      */
-    public function actionDelete($video_id)
+    public function actionDelete(string $video_id)
     {
         $this->findModel($video_id)->delete();
-
         return $this->redirect(['index']);
     }
 
@@ -135,12 +127,11 @@ class VideoController extends Controller
      * @return Video the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel($video_id)
+    protected function findModel(string $video_id)
     {
-        if (($model = Video::findOne(['video_id' => $video_id])) !== null) {
+        if ( ($model = Video::findOne($video_id) ) !== null) {
             return $model;
         }
-
         throw new NotFoundHttpException('The requested page does not exist.');
     }
 }
